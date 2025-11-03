@@ -45,3 +45,4 @@ XTM_COMPOSER_ID=$(uuid)
 EOF
 
 echo "Listo: generado .env con credenciales únicas."
+
