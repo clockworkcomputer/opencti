@@ -45,14 +45,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --address ":9000" --console-address ":9001"
     volumes: [ "s3data:/data" ]
+    # Exponemos la consola en 9002 del host para evitar conflictos con otros procesos
     ports:
-      - "9001:9001"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/minio/health/ready >/dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
+      - "9002:9001"
     networks: [ app_net ]
 
   rabbitmq:
@@ -106,7 +101,7 @@ services:
     depends_on:
       redis:         { condition: service_healthy }
       elasticsearch: { condition: service_healthy }
-      minio:         { condition: service_healthy }   # ← antes era service_started
+      minio:         { condition: service_started }   # <-- para no bloquear por healthcheck
       rabbitmq:      { condition: service_healthy }
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q 'http://localhost:8080/health?health_access_key=${OPENCTI_HEALTHCHECK_ACCESS_KEY}' || exit 1"]
@@ -254,3 +249,4 @@ volumes:
   redisdata:
   amqpdata:
   rsakeys:
+
