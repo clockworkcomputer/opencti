@@ -10,7 +10,7 @@ IP_DEFAULT="${1:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 
 cat > .env <<EOF
 # --- OpenCTI básicos ---
-OPENCTI_ADMIN_EMAIL=admin@clockwork.lan
+OPENCTI_ADMIN_EMAIL=admin@local.test
 OPENCTI_ADMIN_PASSWORD=$(rand_pwd)
 OPENCTI_ADMIN_TOKEN=$(uuid)
 
