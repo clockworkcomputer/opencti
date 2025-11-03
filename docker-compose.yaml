@@ -45,9 +45,14 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --address ":9000" --console-address ":9001"
     volumes: [ "s3data:/data" ]
-    # Exponemos SOLO la consola (útil para clase). La API (9000) queda interna.
     ports:
       - "9001:9001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/minio/health/ready >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks: [ app_net ]
 
   rabbitmq:
@@ -63,7 +68,6 @@ services:
         target: /etc/rabbitmq/rabbitmq.conf
       - amqpdata:/var/lib/rabbitmq
     healthcheck: { test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"], interval: 30s, timeout: 30s, retries: 3 }
-    # Exponemos la consola web para que los alumnos la vean:
     ports:
       - "15672:15672"
     networks: [ app_net ]
@@ -74,7 +78,7 @@ services:
     environment:
       - NODE_OPTIONS=--max-old-space-size=4096
       - APP__PORT=8080
-      - APP__BASE_URL=${OPENCTI_BASE_URL}   # http://<IP>:8080
+      - APP__BASE_URL=${OPENCTI_BASE_URL}
       - APP__ADMIN__EMAIL=${OPENCTI_ADMIN_EMAIL}
       - APP__ADMIN__PASSWORD=${OPENCTI_ADMIN_PASSWORD}
       - APP__ADMIN__TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -98,15 +102,18 @@ services:
       - SMTP__PORT=25
       - PROVIDERS__LOCAL__STRATEGY=LocalStrategy
       - APP__HEALTH_ACCESS_KEY=${OPENCTI_HEALTHCHECK_ACCESS_KEY}
-      - APP__SECURE_COOKIE=false          # <-- sin HTTPS en local
+      - APP__SECURE_COOKIE=false
     depends_on:
       redis:         { condition: service_healthy }
       elasticsearch: { condition: service_healthy }
-      minio:         { condition: service_started }
+      minio:         { condition: service_healthy }   # ← antes era service_started
       rabbitmq:      { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://opencti:8080/health?health_access_key=${OPENCTI_HEALTHCHECK_ACCESS_KEY}"]
-    # Exponemos el puerto de la plataforma al host
+      test: ["CMD-SHELL", "wget --spider -q 'http://localhost:8080/health?health_access_key=${OPENCTI_HEALTHCHECK_ACCESS_KEY}' || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 180s
     ports:
       - "8080:8080"
     networks: [ app_net ]
@@ -120,12 +127,8 @@ services:
       - WORKER_LOG_LEVEL=info
     depends_on:
       opencti: { condition: service_healthy }
-    deploy:
-      mode: replicated
-      replicas: 1        # <-- 1 worker para equipos con 8 GB
     networks: [ app_net ]
 
-  # Conectores internos: puedes dejarlos, pero para clase básica puedes comentarlos
   connector-export-file-stix:
     image: opencti/connector-export-file-stix:6.8.10
     restart: always
@@ -231,7 +234,7 @@ services:
       - OPENCTI__URL=http://opencti:8080
       - OPENCTI__TOKEN=${OPENCTI_ADMIN_TOKEN}
       - OPENCTI__DAEMON__SELECTOR=docker
-      - OPENCTI__DAEMON__DOCKER__NETWORK_MODE=${COMPOSE_PROJECT_NAME}_default
+      - OPENCTI__DAEMON__DOCKER__NETWORK_MODE=app_net   # ← coincide con tu red
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - rsakeys:/keys:ro
