@@ -7,8 +7,15 @@ rand_pwd() { openssl rand -base64 48 | tr -d '\n=' | cut -c1-32; }
 
 # Parámetros mínimos
 IP_DEFAULT="${1:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+ENV_FILE=".env"
 
-cat > .env <<EOF
+# Si ya existe un .env, haz una copia de seguridad
+if [[ -f "$ENV_FILE" ]]; then
+  cp "$ENV_FILE" "${ENV_FILE}.bak_$(date +%s)"
+  echo "🟡 Copia de seguridad creada: ${ENV_FILE}.bak_$(date +%s)"
+fi
+
+cat > "$ENV_FILE" <<EOF
 # --- OpenCTI básicos ---
 OPENCTI_ADMIN_EMAIL=admin@local.test
 OPENCTI_ADMIN_PASSWORD=$(rand_pwd)
@@ -44,4 +51,12 @@ CONNECTOR_ANALYSIS_ID=$(uuid)
 XTM_COMPOSER_ID=$(uuid)
 EOF
 
-echo "Listo: generado .env con credenciales únicas."
+echo "✅ Listo: se generó el archivo .env con credenciales únicas."
+echo
+echo "📂 Ubicación: $(pwd)/.env"
+echo "🌐 URL prevista: http://${IP_DEFAULT:-127.0.0.1}:8080"
+echo
+echo "Puedes arrancar OpenCTI ahora con:"
+echo "   docker compose up -d"
+
+
