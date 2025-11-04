@@ -1,0 +1,17 @@
+  # --- Connector: OpenCTI Datasets (external import) ---
+  connector-opencti-datasets:
+    image: opencti/connector-opencti:latest
+    restart: always
+    environment:
+      - OPENCTI_URL=http://opencti:8080
+      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+      - CONNECTOR_ID=${CONNECTOR_OPENCTI_DATASETS_ID}
+      - CONNECTOR_TYPE=EXTERNAL_IMPORT
+      - CONNECTOR_NAME=OpenCTI Datasets
+      - CONNECTOR_SCOPE=identity,location,sector
+      - CONNECTOR_LOG_LEVEL=info
+      # Ejecuta automáticamente cada 7 días (valor por defecto documentado)
+      - CONFIG_INTERVAL=7
+    depends_on:
+      - opencti
+    networks: [ app_net ]
