@@ -46,5 +46,5 @@ CONNECTOR_ANALYSIS_ID=$(uuid)
 XTM_COMPOSER_ID=$(uuid)
 EOF
 
-echo "✅ Listo: generado .env con credenciales únicas."
+echo "✅ Listo: generado .env con credenciales únicas (sin '+' ni '/' ni '=')."
 

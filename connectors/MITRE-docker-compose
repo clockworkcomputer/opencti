@@ -1,0 +1,17 @@
+  # --- Connector: MITRE ATT&CK (external import) ---
+  connector-mitre:
+    image: opencti/connector-mitre:latest
+    restart: always
+    environment:
+      - OPENCTI_URL=http://opencti:8080
+      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+      - CONNECTOR_ID=${CONNECTOR_MITRE_ID}
+      - CONNECTOR_TYPE=EXTERNAL_IMPORT
+      - CONNECTOR_NAME=MITRE-ATT&CK
+      - CONNECTOR_SCOPE=identity,attack-pattern,course-of-action,intrusion-set,malware,tool,report
+      - CONNECTOR_LOG_LEVEL=info
+      # Opcional: ejecución cada 24h
+      - CONNECTOR_INTERVAL=24h
+    depends_on:
+      - opencti
+    networks: [ app_net ]
